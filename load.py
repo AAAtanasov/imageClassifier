@@ -54,9 +54,10 @@ for imagePath in image_path_list:
 print(random.randrange(len(listOfImages)))
 
 
-def randomIndexAssign(incommingList, countOfElemsToExtract, globalTenFoldArray, arrIndex):
-    items_to_add = extractFromArray(incommingList, countOfElemsToExtract)
-    globalTenFoldArray[arrIndex] = items_to_add
+def randomIndexAssign(incomming_list, count_of_elems_to_extract, globalTenFoldArray, arrIndex):
+    items_to_add = extractFromArray(incomming_list, count_of_elems_to_extract)
+    #globalTenFoldArray[arrIndex] = items_to_add
+    globalTenFoldArray.append(items_to_add)
     return
 
 
@@ -87,7 +88,7 @@ print(unevenElementsCount)
 index = 0
 for elementIndex in range(10):
     print(elementIndex)
-    if (index + 1) < unevenElementsCount:
+    if (index + 1) > unevenElementsCount:
         randomIndexAssign(listOfImages, tenPercentExtractableInteger,
                           tenFoldArray, elementIndex)
     else:
@@ -96,6 +97,11 @@ for elementIndex in range(10):
     index += 1
 
 
+print(len(tenFoldArray))
+for imageNode in tenFoldArray:
+    for image in imageNode:
+        cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+        cv2.waitKey(0)
 
 print(tenFoldArray)
 cv2.waitKey(0)
