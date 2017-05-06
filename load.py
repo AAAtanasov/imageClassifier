@@ -3,6 +3,7 @@ import cv2
 import os
 import os.path
 import random
+from itertools import repeat
 
 # debug info OpenCV version
 print("OpenCV version: " + cv2.__version__)
@@ -25,20 +26,22 @@ for file in os.listdir(imageDir):
         continue
     image_path_list.append(os.path.join(imageDir, file))
 
-listOfImages = []
-# loop through image_path_list to open each image
-for imagePath in image_path_list:
-    image = cv2.imread(imagePath)
+#   listOfImages = []
+listOfImages = image_path_list
 
-    # display the image on screen with imshow()
-    # after checking that it loaded
-    if image is not None:
-        # cv2.imshow(imagePath, image)
-        listOfImages.append(image)
-    elif image is None:
-        print("Error loading: " + imagePath)
-        # end this loop iteration and move on to next image
-        continue
+# loop through image_path_list to open each image
+# for imagePath in image_path_list:
+#     image = cv2.imread(imagePath)
+# 
+#     # display the image on screen with imshow()
+#     # after checking that it loaded
+#     if image is not None:
+#         # cv2.imshow(imagePath, image)
+#         listOfImages.append(image)
+#     elif image is None:
+#         print("Error loading: " + imagePath)
+#         # end this loop iteration and move on to next image
+#         continue
 
     # wait time in milliseconds
     # this is required to show the image
@@ -54,22 +57,24 @@ for imagePath in image_path_list:
 print(random.randrange(len(listOfImages)))
 
 
-def randomIndexAssign(incomming_list, count_of_elems_to_extract, globalTenFoldArray, arrIndex):
-    items_to_add = extractFromArray(incomming_list, count_of_elems_to_extract)
-    #globalTenFoldArray[arrIndex] = items_to_add
-    globalTenFoldArray.append(items_to_add)
+def random_index_assign(incoming_list, count_of_elems_to_extract, global_ten_fold_array, arrIndex):
+    items_to_add = extract_from_array(incoming_list, count_of_elems_to_extract)
+    # global_ten_fold_array.append(items_to_add)
+    global_ten_fold_array[arrIndex] = items_to_add
+    a = global_ten_fold_array[arrIndex]
     return
 
 
-def extractFromArray(incommingList, numberToExtract):
-    resultItems = []
-    lengtOfIncommingList = len(incommingList)
-    for tempIndex in range(int(numberToExtract)):
-        choiceItemIndex = random.randrange(len(incommingList))
-        choiceItem = incommingList.pop(choiceItemIndex - 1)
-        resultItems.append(choiceItem)
+def extract_from_array(incoming_list, number_to_extract):
+    result_items = []
 
-    return resultItems
+    for tempIndex in range(int(number_to_extract)):
+        choice_item_index = random.randrange(len(incoming_list))
+        choice_item = incoming_list.pop(choice_item_index - 1)
+        cv2.imread(choice_item)
+        result_items.append(choice_item)
+
+    return result_items
 
 
 countOfAllImages = len(listOfImages)
@@ -78,7 +83,8 @@ print(countOfAllImages)
 """
 Array used to store all the images for 10-fold cross validation
 """
-tenFoldArray = []
+ten_fold_array = [[] for i in repeat(None, 10)]
+print(type(ten_fold_array))
 
 unevenElementsCount = len(listOfImages) % 10
 roundedElementCount = len(listOfImages) - unevenElementsCount
@@ -86,23 +92,25 @@ tenPercentExtractableInteger = roundedElementCount / 10
 
 print(unevenElementsCount)
 index = 0
-for elementIndex in range(10):
+
+for elementIndex, value in enumerate(range(10)):
     print(elementIndex)
     if (index + 1) > unevenElementsCount:
-        randomIndexAssign(listOfImages, tenPercentExtractableInteger,
-                          tenFoldArray, elementIndex)
+        random_index_assign(listOfImages, tenPercentExtractableInteger,
+                          ten_fold_array, elementIndex)
     else:
-        randomIndexAssign(listOfImages, tenPercentExtractableInteger +
-                          1, tenFoldArray, elementIndex)
+        random_index_assign(listOfImages, tenPercentExtractableInteger + 1,
+                           ten_fold_array, elementIndex)
     index += 1
 
 
-print(len(tenFoldArray))
-for imageNode in tenFoldArray:
+print(len(ten_fold_array))
+for imageNode in ten_fold_array:
     for image in imageNode:
-        cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+        temp_image = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+        cv2.imshow(image, temp_image)
         cv2.waitKey(0)
 
-print(tenFoldArray)
+print(ten_fold_array)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
