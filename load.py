@@ -5,15 +5,30 @@ import os.path
 import random
 from itertools import repeat
 
-# debug info OpenCV version
-print("OpenCV version: " + cv2.__version__)
+"""
+Array used to store all the images for 10-fold cross validation
+"""
+ten_fold_array = [[] for i in repeat(None, 10)]
 
-param = "accordion"
+
+def iterate_class_folders(number_of_classes):
+    main_dir = "101_ObjectCategories"
+    sub_folders_list = []
+    all_folder_names = os.listdir(main_dir)
+    all_folder_names.remove("BACKGROUND_Google")
+
+    for tempIndex, _ in enumerate(range(number_of_classes)):
+        choice_item_index = random.randrange(len(all_folder_names))
+        choice_item = all_folder_names.pop(choice_item_index - 1)
+        sub_folders_list.append(choice_item)
+
+    for folder in sub_folders_list:
+        retrieve_image_from_folder(folder)
 
 
-def retrieve_image_from_folder(param):
+def retrieve_image_from_folder(folder_name):
     # image path and valid extensions
-    image_dir = "101_ObjectCategories/" + param  # specify your path here
+    image_dir = "101_ObjectCategories/" + folder_name  # specify your path here
     image_path_list = []
     valid_image_extensions = [".jpg", ".jpeg", ".png",
                               ".tif", ".tiff"]  # specify your vald extensions here
@@ -27,19 +42,15 @@ def retrieve_image_from_folder(param):
 
     list_of_images = image_path_list
 
-    print(random.randrange(len(list_of_images)))
-
     def random_index_assign(incoming_list, count_of_elems_to_extract, global_ten_fold_array, arrIndex):
         items_to_add = extract_from_array(incoming_list, count_of_elems_to_extract)
-        # global_ten_fold_array.append(items_to_add)
-        global_ten_fold_array[arrIndex] = items_to_add
-        a = global_ten_fold_array[arrIndex]
+        global_ten_fold_array[arrIndex].extend(items_to_add)
         return
 
     def extract_from_array(incoming_list, number_to_extract):
         result_items = []
 
-        for tempIndex in range(int(number_to_extract)):
+        for tempIndex, _ in enumerate(range(int(number_to_extract))):
             choice_item_index = random.randrange(len(incoming_list))
             choice_item = incoming_list.pop(choice_item_index - 1)
             cv2.imread(choice_item)
@@ -47,21 +58,13 @@ def retrieve_image_from_folder(param):
 
         return result_items
 
-    """
-    Array used to store all the images for 10-fold cross validation
-    """
-    ten_fold_array = [[] for i in repeat(None, 10)]
-    print(type(ten_fold_array))
-
     uneven_elements_count = len(list_of_images) % 10
     rounded_elements_count = len(list_of_images) - uneven_elements_count
     ten_percent_extractable_integer = rounded_elements_count / 10
 
-    print(uneven_elements_count)
     index = 0
 
     for elementIndex, value in enumerate(range(10)):
-        print(elementIndex)
         if (index + 1) > uneven_elements_count:
             random_index_assign(list_of_images, ten_percent_extractable_integer,
                                 ten_fold_array, elementIndex)
@@ -77,9 +80,17 @@ def retrieve_image_from_folder(param):
     #         cv2.imshow(image, temp_image)
     #         cv2.waitKey(0)
 
-    print(ten_fold_array)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # print(ten_fold_array)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
 
-retrieve_image_from_folder("ant")
+iterate_class_folders(100)
+print(ten_fold_array)
+temp_image = cv2.imread(ten_fold_array[0][0])
+cv2.imshow("temp", temp_image)
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+# retrieve_image_from_folder("ant")
+# retrieve_image_from_folder("ant")
