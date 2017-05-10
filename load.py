@@ -1,6 +1,6 @@
 # import the necessary packages
 import cv2
-import os
+import numpy as np
 import os.path
 import random
 from itertools import repeat
@@ -28,7 +28,7 @@ def iterate_class_folders(number_of_classes):
 
 def retrieve_image_from_folder(folder_name):
     # image path and valid extensions
-    image_dir = "101_ObjectCategories/" + folder_name  # specify your path here
+    image_dir = "101_ObjectCategories/" + "airplanes" #folder_name  # specify your path here
     image_path_list = []
     valid_image_extensions = [".jpg", ".jpeg", ".png",
                               ".tif", ".tiff"]  # specify your vald extensions here
@@ -73,10 +73,42 @@ def retrieve_image_from_folder(folder_name):
         index += 1
 
 
-iterate_class_folders(100)
+iterate_class_folders(1)
 print(ten_fold_array)
 temp_image = cv2.imread(ten_fold_array[0][0])
-cv2.imshow("temp", temp_image)
+
+"""Corner detection"""
+def corner_detection(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = np.float32(gray)
+
+    corners = cv2.goodFeaturesToTrack(gray, 100, 0.01, 10)
+    corners = np.int0(corners)
+
+    for corner in corners:
+        x, y = corner.ravel()
+        cv2.circle(image, (x, y), 4, 255, -1)
+
+    cv2.imshow("temp", image)
+
+def edge_detection(image):
+    # edges = cv2.Laplacian(image, cv2.CV_64F)    #cv2.Canny(image, 100, 100)
+    edges = cv2.Canny(image, 100, 100)
+
+    cv2.imshow("Canny", edges)
+#
+# for partial in ten_fold_array[0]:
+#     temp_image = cv2.imread(partial)
+#     edge_detection(temp_image)
+# edge_detection(temp_image)
+
+temp_image = cv2.imread(ten_fold_array[0][0])
+# temp_image1 = cv2.imread(ten_fold_array[0][1])
+# temp_image2 = cv2.imread(ten_fold_array[0][2])
+# temp_image3 = cv2.imread(ten_fold_array[0][3])
+
+edge_detection(temp_image)
+# edge_detection(temp_image1)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
