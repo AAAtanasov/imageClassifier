@@ -42,9 +42,9 @@ def retrieve_image_from_folder(folder_name):
 
     list_of_images = image_path_list
 
-    def random_index_assign(incoming_list, count_of_elems_to_extract, global_ten_fold_array, arrIndex):
+    def random_index_assign(incoming_list, count_of_elems_to_extract, global_ten_fold_array, array_index):
         items_to_add = extract_from_array(incoming_list, count_of_elems_to_extract)
-        global_ten_fold_array[arrIndex].extend(items_to_add)
+        global_ten_fold_array[array_index].extend(items_to_add)
         return
 
     def extract_from_array(incoming_list, number_to_extract):
@@ -53,7 +53,6 @@ def retrieve_image_from_folder(folder_name):
         for tempIndex, _ in enumerate(range(int(number_to_extract))):
             choice_item_index = random.randrange(len(incoming_list))
             choice_item = incoming_list.pop(choice_item_index - 1)
-            cv2.imread(choice_item)
             result_items.append(choice_item)
 
         return result_items
@@ -73,17 +72,6 @@ def retrieve_image_from_folder(folder_name):
                                 ten_fold_array, elementIndex)
         index += 1
 
-    # print(len(ten_fold_array))
-    # for imageNode in ten_fold_array:
-    #     for image in imageNode:
-    #         temp_image = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-    #         cv2.imshow(image, temp_image)
-    #         cv2.waitKey(0)
-
-    # print(ten_fold_array)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
 
 iterate_class_folders(100)
 print(ten_fold_array)
@@ -92,5 +80,3 @@ cv2.imshow("temp", temp_image)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-# retrieve_image_from_folder("ant")
-# retrieve_image_from_folder("ant")
