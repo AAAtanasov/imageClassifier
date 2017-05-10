@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import os.path
 import random
+import math
 from itertools import repeat
 
 """
@@ -28,7 +29,7 @@ def iterate_class_folders(number_of_classes):
 
 def retrieve_image_from_folder(folder_name):
     # image path and valid extensions
-    image_dir = "101_ObjectCategories/" + "airplanes" #folder_name  # specify your path here
+    image_dir = "101_ObjectCategories/" + folder_name  # specify your path here
     image_path_list = []
     valid_image_extensions = [".jpg", ".jpeg", ".png",
                               ".tif", ".tiff"]  # specify your vald extensions here
@@ -57,25 +58,46 @@ def retrieve_image_from_folder(folder_name):
 
         return result_items
 
-    uneven_elements_count = len(list_of_images) % 10
-    rounded_elements_count = len(list_of_images) - uneven_elements_count
-    ten_percent_extractable_integer = rounded_elements_count / 10
+    length_of_images = len(list_of_images)
+    # uneven_elements_count = len(list_of_images) % 10
+    # rounded_elements_count = len(list_of_images) - uneven_elements_count
+    # ten_percent_extractable_integer = length_of_images / 10
 
-    index = 0
+    real_element_division = length_of_images / 10
+    real_index = 0
+    last_start_position = 0
 
     for elementIndex, value in enumerate(range(10)):
-        if (index + 1) > uneven_elements_count:
-            random_index_assign(list_of_images, ten_percent_extractable_integer,
-                                ten_fold_array, elementIndex)
-        else:
-            random_index_assign(list_of_images, ten_percent_extractable_integer + 1,
-                                ten_fold_array, elementIndex)
-        index += 1
+        real_index += real_element_division
+        temp_index = math.floor(real_index - last_start_position)
+        last_start_position += temp_index
+
+        if last_start_position != length_of_images and elementIndex == 9:
+            temp_index += length_of_images - last_start_position
+        # if real_index == real_element_division:
+        #     temp_index = math.floor(real_index)
+        # elif real_index != length_of_images:
+        #     temp_index = math.floor(real_index - real_element_division * elementIndex + 1)
+        # else:
+        #     temp_index = math.ceil(real_index - real_element_division * 9)
+
+        random_index_assign(list_of_images, temp_index,
+                            ten_fold_array, elementIndex)
 
 
-iterate_class_folders(1)
+
+        # if (index + 1) > uneven_elements_count:
+        #     random_index_assign(list_of_images, ten_percent_extractable_integer,
+        #                         ten_fold_array, elementIndex)
+        # else:
+        #     random_index_assign(list_of_images, ten_percent_extractable_integer + 1,
+        #                         ten_fold_array, elementIndex)
+        # index += 1
+
+
+iterate_class_folders(100)
 print(ten_fold_array)
-temp_image = cv2.imread(ten_fold_array[0][0])
+# temp_image = cv2.imread(ten_fold_array[0][0])
 
 """Corner detection"""
 def corner_detection(image):
