@@ -53,8 +53,7 @@ def retrieve_image_from_folder(folder_name):
         result_items = []
 
         for tempIndex, _ in enumerate(range(int(number_to_extract))):
-            choice_item_index = random.randrange(len(incoming_list))
-            choice_item = incoming_list.pop(choice_item_index - 1)
+            choice_item = incoming_list.pop(0)
             result_items.append(choice_item)
 
         return result_items
@@ -127,10 +126,14 @@ temp_image1 = cv2.imread(ten_fold_array[0][1])
 # temp_image2 = cv2.imread(ten_fold_array[0][2])
 # temp_image3 = cv2.imread(ten_fold_array[0][3])
 
-edge_detection(temp_image)
+# edge_detection(temp_image)
 # edge_detection(temp_image1)
 # corner_detection(temp_image)
 
 # brute_force(temp_image, temp_image1)
+
+hog = cv2.HOGDescriptor()
+h = hog.compute(temp_image)
+print(h)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
