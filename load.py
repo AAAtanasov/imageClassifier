@@ -6,6 +6,9 @@ import random
 import math
 import matplotlib.pyplot as plt
 from itertools import repeat
+from sklearn.svm import LinearSVC
+from scipy.cluster.vq import *
+from sklearn.preprocessing import StandardScaler
 
 """
 Array used to store all the images for 10-fold cross validation
@@ -75,8 +78,8 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(5)
-print(ten_fold_array)
+iterate_class_folders(2)
+# print(ten_fold_array)
 # temp_image = cv2.imread(ten_fold_array[0][0])
 
 """Corner detection"""
@@ -123,15 +126,21 @@ X_train = []
 Y_train = []
 X_test = []
 Y_test = []
-hog_descriptor = cv2.HOGDescriptor()
+sift = cv2.xfeatures2d.SIFT_create()
+des_list = []
+
+"""Fill array"""
+def gen_sift_features(gray_img):
+    kp, desc = sift.detectAndCompute(gray_img, None)
+    return kp, desc
 
 
 def split_data_labels(current_folder_files, X_array, Y_array):
     for picture in current_folder_files:
         label = picture.split('/')[1].split('\\')[0]
-        image = cv2.imread(picture)
-        current_hog_feature = hog_descriptor.compute(image)
-        X_array.append(current_hog_feature)
+        image = cv2.imread(picture, cv2.COLOR_BGR2GRAY)
+        kp, descr = gen_sift_features(image)
+        X_array.append(descr)
         Y_array.append(label)
 
 for tempIndex, _ in enumerate(range(9)):
@@ -141,6 +150,64 @@ for tempIndex, _ in enumerate(range(9)):
 
 split_data_labels(ten_fold_array[9], X_test, Y_test)
 
+"""Transform learning features into usable"""
+descriptors_list = X_train[0]
+for element in X_train[1:]:
+    descriptors_list = np.vstack((descriptors_list, element))
+
+k = 100
+voc, variance = kmeans(descriptors_list, k, 1)
+
+im_features = np.zeros((len(Y_train), k), "float32")
+for i in range(len(Y_train)):
+    words, distance = vq(X_train[i], voc)
+    for w in words:
+        im_features[i][w] += 1
+
+
+nbr_occurences = np.sum((im_features > 0) * 1, axis = 0)
+idf = np.array(np.log((1.0*len(Y_train)+1) / (1.0*nbr_occurences + 1)), 'float32')
+print(nbr_occurences)
+
+stdSlr = StandardScaler().fit(im_features)
+im_features = stdSlr.transform(im_features)
+
+clf = LinearSVC()
+clf.fit(im_features, np.array(Y_train))
+print('fitted')
+
+"""Transform test features into usable"""
+descriptor_test = X_test[0]
+for element in X_test[1:]:
+    descriptor_test = np.vstack((descriptor_test, element))
+
+voctest, variancetest = kmeans(descriptor_test, k, 1)
+
+
+test_im_features = np.zeros((len(Y_test), k), "float32")
+for i in range(len(Y_test)):
+    words, distance = vq(X_test[i], voctest)
+    for w in words:
+        test_im_features[i][w] += 1
+
+# Missing nbr occurances and idf
+
+stdSlr = StandardScaler().fit(test_im_features)
+test_im_features = stdSlr.transform(test_im_features)
+print('transformed test')
+
+accuract = clf.score(test_im_features, np.array(Y_test))
+
+
+print('Progress')
+print(accuract)
+split_data_labels(ten_fold_array[9], X_test, Y_test)
+
+
+
+
+
+
 # KNN = knn_classifier(n_neighbors=9)
 # temp_train = X_train[:9]
 # temp_label = Y_train[:9]
@@ -149,7 +216,20 @@ split_data_labels(ten_fold_array[9], X_test, Y_test)
 # confidence = KNN.score(X_test, Y_test)
 # print(confidence)
 
-# temp_image = cv2.imread(ten_fold_array[0][0])
+
+def to_gray(color_img):
+    gray = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
+    return gray
+
+
+def show_sift_features(gray_img, color_img, kp):
+    return plt.imshow(cv2.drawKeypoints(gray_img, kp, color_img.copy()))
+
+temp_image = cv2.imread(ten_fold_array[0][0])
+temp_image_gray = to_gray(temp_image)
+temp_kp, temp_desc = gen_sift_features(temp_image_gray)
+# show_sift_features(temp_image_gray, temp_image, temp_kp);
+
 # temp_image1 = cv2.imread(ten_fold_array[0][1])
 # temp_image1 = cv2.imread(ten_fold_array[0][1])
 # temp_image2 = cv2.imread(ten_fold_array[0][2])
