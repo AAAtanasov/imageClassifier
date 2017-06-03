@@ -75,7 +75,7 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(101)
+iterate_class_folders(5)
 print(ten_fold_array)
 # temp_image = cv2.imread(ten_fold_array[0][0])
 
@@ -119,9 +119,38 @@ def brute_force(image1, image2):
     plt.imshow(image3)
     plt.show()
 
+X_train = []
+Y_train = []
+X_test = []
+Y_test = []
+hog_descriptor = cv2.HOGDescriptor()
 
-temp_image = cv2.imread(ten_fold_array[0][0])
-temp_image1 = cv2.imread(ten_fold_array[0][1])
+
+def split_data_labels(current_folder_files, X_array, Y_array):
+    for picture in current_folder_files:
+        label = picture.split('/')[1].split('\\')[0]
+        image = cv2.imread(picture)
+        current_hog_feature = hog_descriptor.compute(image)
+        X_array.append(current_hog_feature)
+        Y_array.append(label)
+
+for tempIndex, _ in enumerate(range(9)):
+    currentFolderFiles = ten_fold_array[tempIndex]
+    split_data_labels(currentFolderFiles, X_train, Y_train)
+
+
+split_data_labels(ten_fold_array[9], X_test, Y_test)
+
+# KNN = knn_classifier(n_neighbors=9)
+# temp_train = X_train[:9]
+# temp_label = Y_train[:9]
+
+# KNN.fit(temp_train, temp_label)
+# confidence = KNN.score(X_test, Y_test)
+# print(confidence)
+
+# temp_image = cv2.imread(ten_fold_array[0][0])
+# temp_image1 = cv2.imread(ten_fold_array[0][1])
 # temp_image1 = cv2.imread(ten_fold_array[0][1])
 # temp_image2 = cv2.imread(ten_fold_array[0][2])
 # temp_image3 = cv2.imread(ten_fold_array[0][3])
@@ -132,8 +161,5 @@ temp_image1 = cv2.imread(ten_fold_array[0][1])
 
 # brute_force(temp_image, temp_image1)
 
-hog = cv2.HOGDescriptor()
-h = hog.compute(temp_image)
-print(h)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
