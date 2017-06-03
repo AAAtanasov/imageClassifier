@@ -9,6 +9,7 @@ from itertools import repeat
 from sklearn.svm import LinearSVC
 from scipy.cluster.vq import *
 from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 """
 Array used to store all the images for 10-fold cross validation
@@ -78,7 +79,7 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(2)
+iterate_class_folders(17)
 # print(ten_fold_array)
 # temp_image = cv2.imread(ten_fold_array[0][0])
 
@@ -172,7 +173,7 @@ print(nbr_occurences)
 stdSlr = StandardScaler().fit(im_features)
 im_features = stdSlr.transform(im_features)
 
-clf = LinearSVC()
+clf = KNeighborsClassifier(n_neighbors=9)
 clf.fit(im_features, np.array(Y_train))
 print('fitted')
 
@@ -201,14 +202,8 @@ accuract = clf.score(test_im_features, np.array(Y_test))
 
 print('Progress')
 print(accuract)
-split_data_labels(ten_fold_array[9], X_test, Y_test)
 
 
-
-
-
-
-# KNN = knn_classifier(n_neighbors=9)
 # temp_train = X_train[:9]
 # temp_label = Y_train[:9]
 
