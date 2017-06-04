@@ -10,6 +10,7 @@ from sklearn.svm import LinearSVC
 from scipy.cluster.vq import *
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix
 
 """
 Array used to store all the images for 10-fold cross validation
@@ -21,6 +22,8 @@ def iterate_class_folders(number_of_classes):
     main_dir = "101_ObjectCategories"
     sub_folders_list = []
     all_folder_names = os.listdir(main_dir)
+    temp_folders = ['ant', 'accordion']
+    all_folder_names = temp_folders
     # all_folder_names.remove("BACKGROUND_Google")
 
     for tempIndex, _ in enumerate(range(number_of_classes)):
@@ -79,7 +82,7 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(17)
+iterate_class_folders(2)
 # print(ten_fold_array)
 # temp_image = cv2.imread(ten_fold_array[0][0])
 
@@ -141,6 +144,14 @@ def split_data_labels(current_folder_files, X_array, Y_array):
         label = picture.split('/')[1].split('\\')[0]
         image = cv2.imread(picture, cv2.COLOR_BGR2GRAY)
         kp, descr = gen_sift_features(image)
+
+        if descr is None:
+            continue
+
+        # if label != current_label:
+        #     print('Extracted features from {0}, extracting {1}'.format(current_label, label))
+        #     current_label = label
+
         X_array.append(descr)
         Y_array.append(label)
 
@@ -153,8 +164,12 @@ split_data_labels(ten_fold_array[9], X_test, Y_test)
 
 """Transform learning features into usable"""
 descriptors_list = X_train[0]
+traincount = 0
 for element in X_train[1:]:
+    if traincount % 50 == 0:
+        print('Trained {0} examples, current label: {1}'.format(traincount, Y_train[traincount]))
     descriptors_list = np.vstack((descriptors_list, element))
+    traincount += 1
 
 k = 100
 voc, variance = kmeans(descriptors_list, k, 1)
@@ -166,7 +181,7 @@ for i in range(len(Y_train)):
         im_features[i][w] += 1
 
 
-nbr_occurences = np.sum((im_features > 0) * 1, axis = 0)
+nbr_occurences = np.sum((im_features > 0) * 1, axis=0)
 idf = np.array(np.log((1.0*len(Y_train)+1) / (1.0*nbr_occurences + 1)), 'float32')
 print(nbr_occurences)
 
@@ -181,6 +196,8 @@ print('fitted')
 descriptor_test = X_test[0]
 for element in X_test[1:]:
     descriptor_test = np.vstack((descriptor_test, element))
+
+
 
 voctest, variancetest = kmeans(descriptor_test, k, 1)
 
@@ -197,12 +214,14 @@ stdSlr = StandardScaler().fit(test_im_features)
 test_im_features = stdSlr.transform(test_im_features)
 print('transformed test')
 
-accuract = clf.score(test_im_features, np.array(Y_test))
-
+accuracy = clf.score(test_im_features, np.array(Y_test))
+predict = clf.predict(test_im_features)
 
 print('Progress')
-print(accuract)
+print(accuracy)
 
+matrix = confusion_matrix(Y_test, predict)
+print(matrix)
 
 # temp_train = X_train[:9]
 # temp_label = Y_train[:9]
@@ -212,17 +231,17 @@ print(accuract)
 # print(confidence)
 
 
-def to_gray(color_img):
-    gray = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
-    return gray
-
-
-def show_sift_features(gray_img, color_img, kp):
-    return plt.imshow(cv2.drawKeypoints(gray_img, kp, color_img.copy()))
-
-temp_image = cv2.imread(ten_fold_array[0][0])
-temp_image_gray = to_gray(temp_image)
-temp_kp, temp_desc = gen_sift_features(temp_image_gray)
+# def to_gray(color_img):
+#     gray = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
+#     return gray
+#
+#
+# def show_sift_features(gray_img, color_img, kp):
+#     return plt.imshow(cv2.drawKeypoints(gray_img, kp, color_img.copy()))
+#
+# temp_image = cv2.imread(ten_fold_array[0][0])
+# temp_image_gray = to_gray(temp_image)
+# temp_kp, temp_desc = gen_sift_features(temp_image_gray)
 # show_sift_features(temp_image_gray, temp_image, temp_kp);
 
 # temp_image1 = cv2.imread(ten_fold_array[0][1])
