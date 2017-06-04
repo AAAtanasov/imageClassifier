@@ -11,20 +11,24 @@ from scipy.cluster.vq import *
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
+from sklearn.neural_network import MLPClassifier
+from sklearn import svm
+import itertools
+
 
 """
 Array used to store all the images for 10-fold cross validation
 """
 ten_fold_array = [[] for i in repeat(None, 10)]
-
+sub_folders_list = []
 
 def iterate_class_folders(number_of_classes):
     main_dir = "101_ObjectCategories"
-    sub_folders_list = []
+    # sub_folders_list = []
     all_folder_names = os.listdir(main_dir)
     temp_folders = ['ant', 'accordion']
-    all_folder_names = temp_folders
-    # all_folder_names.remove("BACKGROUND_Google")
+    # all_folder_names = temp_folders
+    all_folder_names.remove(".DS_Store")
 
     for tempIndex, _ in enumerate(range(number_of_classes)):
         choice_item_index = random.randrange(len(all_folder_names))
@@ -82,9 +86,8 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(2)
-# print(ten_fold_array)
-# temp_image = cv2.imread(ten_fold_array[0][0])
+iterate_class_folders(101)
+
 
 """Corner detection"""
 
@@ -134,12 +137,15 @@ sift = cv2.xfeatures2d.SIFT_create()
 des_list = []
 
 """Fill array"""
+
+
 def gen_sift_features(gray_img):
     kp, desc = sift.detectAndCompute(gray_img, None)
     return kp, desc
 
 
 def split_data_labels(current_folder_files, X_array, Y_array):
+    extract_count = 0
     for picture in current_folder_files:
         label = picture.split('/')[1].split('\\')[0]
         image = cv2.imread(picture, cv2.COLOR_BGR2GRAY)
@@ -148,12 +154,49 @@ def split_data_labels(current_folder_files, X_array, Y_array):
         if descr is None:
             continue
 
-        # if label != current_label:
-        #     print('Extracted features from {0}, extracting {1}'.format(current_label, label))
-        #     current_label = label
+        if extract_count % 40 == 0:
+            print('Extracted {0} features, current label: {1}'.format(extract_count, label))
+
+        extract_count += 1
 
         X_array.append(descr)
         Y_array.append(label)
+
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show()
+
 
 for tempIndex, _ in enumerate(range(9)):
     currentFolderFiles = ten_fold_array[tempIndex]
@@ -188,7 +231,8 @@ print(nbr_occurences)
 stdSlr = StandardScaler().fit(im_features)
 im_features = stdSlr.transform(im_features)
 
-clf = KNeighborsClassifier(n_neighbors=9)
+print('Fitting')
+clf = KNeighborsClassifier(n_neighbors=101)
 clf.fit(im_features, np.array(Y_train))
 print('fitted')
 
@@ -196,8 +240,6 @@ print('fitted')
 descriptor_test = X_test[0]
 for element in X_test[1:]:
     descriptor_test = np.vstack((descriptor_test, element))
-
-
 
 voctest, variancetest = kmeans(descriptor_test, k, 1)
 
@@ -223,37 +265,11 @@ print(accuracy)
 matrix = confusion_matrix(Y_test, predict)
 print(matrix)
 
-# temp_train = X_train[:9]
-# temp_label = Y_train[:9]
-
-# KNN.fit(temp_train, temp_label)
-# confidence = KNN.score(X_test, Y_test)
-# print(confidence)
+np.set_printoptions(precision=2)
+plot_confusion_matrix(matrix, classes=sub_folders_list,
+                      title='Confusion matrix, without normalization')
 
 
-# def to_gray(color_img):
-#     gray = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
-#     return gray
-#
-#
-# def show_sift_features(gray_img, color_img, kp):
-#     return plt.imshow(cv2.drawKeypoints(gray_img, kp, color_img.copy()))
-#
-# temp_image = cv2.imread(ten_fold_array[0][0])
-# temp_image_gray = to_gray(temp_image)
-# temp_kp, temp_desc = gen_sift_features(temp_image_gray)
-# show_sift_features(temp_image_gray, temp_image, temp_kp);
-
-# temp_image1 = cv2.imread(ten_fold_array[0][1])
-# temp_image1 = cv2.imread(ten_fold_array[0][1])
-# temp_image2 = cv2.imread(ten_fold_array[0][2])
-# temp_image3 = cv2.imread(ten_fold_array[0][3])
-
-# edge_detection(temp_image)
-# edge_detection(temp_image1)
-# corner_detection(temp_image)
-
-# brute_force(temp_image, temp_image1)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
