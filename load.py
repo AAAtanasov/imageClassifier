@@ -30,7 +30,7 @@ def iterate_class_folders(number_of_classes):
     all_folder_names = os.listdir(main_dir)
     temp_folders = ['Motorbikes', 'accordion', 'crocodile']
     # all_folder_names = temp_folders
-    all_folder_names.remove(".DS_Store")
+    # all_folder_names.remove(".DS_Store")
 
     for tempIndex, _ in enumerate(range(number_of_classes)):
         choice_item_index = random.randrange(len(all_folder_names))
@@ -135,7 +135,7 @@ X_train = []
 Y_train = []
 X_test = []
 Y_test = []
-sift = cv2.xfeatures2d.SIFT_create()
+# sift = cv2.xfeatures2d.SIFT_create()
 des_list = []
 
 """Fill array"""
@@ -200,51 +200,51 @@ def plot_confusion_matrix(cm, classes,
     plt.show()
 
 
-for tempIndex, _ in enumerate(range(9)):
-    currentFolderFiles = ten_fold_array[tempIndex]
-    split_data_labels(currentFolderFiles, X_train, Y_train)
-
-
-split_data_labels(ten_fold_array[9], X_test, Y_test)
-
-"""Transform learning features into usable"""
-descriptors_list = X_train[0]
-traincount = 0
-for element in X_train[1:]:
-    if traincount % 50 == 0:
-        print('Trained {0} examples, current label: {1}'.format(traincount, Y_train[traincount]))
-    descriptors_list = np.vstack((descriptors_list, element))
-    traincount += 1
-
-k = 80
-voc, variance = kmeans(descriptors_list, k, 1)
-
-im_features = np.zeros((len(Y_train), k), "float32")
-for i in range(len(Y_train)):
-    words, distance = vq(X_train[i], voc)
-    for w in words:
-        im_features[i][w] += 1
-
-
-nbr_occurences = np.sum((im_features > 0) * 1, axis=0)
-idf = np.array(np.log((1.0*len(Y_train)+1) / (1.0*nbr_occurences + 1)), 'float32')
-print(nbr_occurences)
-
-stdSlr = StandardScaler().fit(im_features)
-im_features = stdSlr.transform(im_features)
-pickle.dump(im_features, open("train_X.p", "wb"))
-pickle.dump(Y_train, open("train_Y.p", "wb"))
+# for tempIndex, _ in enumerate(range(9)):
+#     currentFolderFiles = ten_fold_array[tempIndex]
+#     split_data_labels(currentFolderFiles, X_train, Y_train)
+#
+#
+# split_data_labels(ten_fold_array[9], X_test, Y_test)
+#
+# """Transform learning features into usable"""
+# descriptors_list = X_train[0]
+# traincount = 0
+# for element in X_train[1:]:
+#     if traincount % 50 == 0:
+#         print('Trained {0} examples, current label: {1}'.format(traincount, Y_train[traincount]))
+#     descriptors_list = np.vstack((descriptors_list, element))
+#     traincount += 1
+#
+# k = 80
+# voc, variance = kmeans(descriptors_list, k, 1)
+#
+# im_features = np.zeros((len(Y_train), k), "float32")
+# for i in range(len(Y_train)):
+#     words, distance = vq(X_train[i], voc)
+#     for w in words:
+#         im_features[i][w] += 1
+#
+#
+# nbr_occurences = np.sum((im_features > 0) * 1, axis=0)
+# idf = np.array(np.log((1.0*len(Y_train)+1) / (1.0*nbr_occurences + 1)), 'float32')
+# print(nbr_occurences)
+#
+# stdSlr = StandardScaler().fit(im_features)
+# im_features = stdSlr.transform(im_features)
+# pickle.dump(im_features, open("train_X.p", "wb"))
+# pickle.dump(Y_train, open("train_Y.p", "wb"))
 
 # im_features = pickle.load(open("save.p", "rb"))
 
 print('Fitting')
 
-# im_features = pickle.load(open("train_X.p", "rb"))
-# Y_train = pickle.load(open("train_Y.p", "rb"))
+im_features = pickle.load(open("train_X.p", "rb"))
+Y_train = pickle.load(open("train_Y.p", "rb"))
 
-clf = KNeighborsClassifier(n_neighbors=29)
-# clf = mlp(hidden_layer_sizes=(1000, ),  max_iter=2000, learning_rate_init=0.001, warm_start=True, early_stopping=True,
-#           learning_rate='adaptive',)
+# clf = KNeighborsClassifier(n_neighbors=101)
+clf = mlp(hidden_layer_sizes=(1000, ),  max_iter=2000, learning_rate_init=0.001, warm_start=True, early_stopping=True,
+          learning_rate='adaptive',)
 
 for i in range(20):
     print(i)
@@ -253,32 +253,32 @@ for i in range(20):
 print('fitted')
 
 """Transform test features into usable"""
-descriptor_test = X_test[0]
-for element in X_test[1:]:
-    descriptor_test = np.vstack((descriptor_test, element))
-
-test_im_features = descriptor_test
-
-voctest, variancetest = kmeans(descriptor_test, k, 1)
-
-
-test_im_features = np.zeros((len(Y_test), k), "float32")
-for i in range(len(Y_test)):
-    words, distance = vq(X_test[i], voctest)
-    for w in words:
-        test_im_features[i][w] += 1
-
-# Missing nbr occurances and idf
-
-stdSlr = StandardScaler().fit(test_im_features)
-test_im_features = stdSlr.transform(test_im_features)
-pickle.dump(test_im_features, open("test_X.p", "wb"))
-pickle.dump(Y_test, open("test_Y.p", "wb"))
+# descriptor_test = X_test[0]
+# for element in X_test[1:]:
+#     descriptor_test = np.vstack((descriptor_test, element))
+#
+# test_im_features = descriptor_test
+#
+# voctest, variancetest = kmeans(descriptor_test, k, 1)
+#
+#
+# test_im_features = np.zeros((len(Y_test), k), "float32")
+# for i in range(len(Y_test)):
+#     words, distance = vq(X_test[i], voctest)
+#     for w in words:
+#         test_im_features[i][w] += 1
+#
+# # Missing nbr occurances and idf
+#
+# stdSlr = StandardScaler().fit(test_im_features)
+# test_im_features = stdSlr.transform(test_im_features)
+# pickle.dump(test_im_features, open("test_X.p", "wb"))
+# pickle.dump(Y_test, open("test_Y.p", "wb"))
 
 print('transformed test')
 
-# test_im_features = pickle.load(open("test_X.p", "rb"))
-# Y_test = pickle.load(open("test_Y.p", "rb"))
+test_im_features = pickle.load(open("test_X.p", "rb"))
+Y_test = pickle.load(open("test_Y.p", "rb"))
 
 accuracy = clf.score(test_im_features, np.array(Y_test))
 predict = clf.predict(test_im_features)
@@ -289,9 +289,9 @@ print(accuracy)
 matrix = confusion_matrix(Y_test, predict)
 # print(matrix)
 
-np.set_printoptions(precision=2)
-plot_confusion_matrix(matrix, classes=sub_folders_list,
-                      title='Confusion matrix, without normalization')
+# matrixnp.set_printoptions(precision=2)
+# plot_confusion_matrix(matrix, classes=sub_folders_list,
+#                       title='Confusion matrix, without normalization')
 
 
 
