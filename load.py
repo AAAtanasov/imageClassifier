@@ -14,12 +14,11 @@ from sklearn.metrics import confusion_matrix
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors.nearest_centroid import NearestCentroid
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import ExtraTreesClassifier
 from sklearn import svm
 import itertools
 import pickle
 from sklearn.neural_network import MLPClassifier as mlp
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
 
 """
 Array used to store all the images for 10-fold cross validation
@@ -27,13 +26,14 @@ Array used to store all the images for 10-fold cross validation
 ten_fold_array = [[] for i in repeat(None, 10)]
 sub_folders_list = []
 
+
 def iterate_class_folders(number_of_classes):
     main_dir = "101_ObjectCategories"
     # sub_folders_list = []
     all_folder_names = os.listdir(main_dir)
     temp_folders = ['Motorbikes', 'accordion', 'crocodile']
     # all_folder_names = temp_folders
-    # all_folder_names.remove(".DS_Store")
+    all_folder_names.remove(".DS_Store")
 
     for tempIndex, _ in enumerate(range(number_of_classes)):
         choice_item_index = random.randrange(len(all_folder_names))
@@ -49,7 +49,7 @@ def retrieve_image_from_folder(folder_name):
     image_dir = "101_ObjectCategories/" + folder_name  # specify your path here
     image_path_list = []
     valid_image_extensions = [".jpg", ".jpeg", ".png",
-                              ".tif", ".tiff"]  # specify your vald extensions here
+                              ".tif", ".tiff"]  # specify your valid extensions here
     valid_image_extensions = [item.lower() for item in valid_image_extensions]
 
     for file in os.listdir(image_dir):
@@ -93,20 +93,60 @@ def retrieve_image_from_folder(folder_name):
 
 iterate_class_folders(101)
 
+"""Corner detection"""
+
+
+def corner_detection(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = np.float32(gray)
+
+    corners = cv2.goodFeaturesToTrack(gray, 100, 0.01, 10)
+    cv2.goodFeaturesToTrack()
+    corners = np.int0(corners)
+
+    for corner in corners:
+        x, y = corner.ravel()
+        cv2.circle(image, (x, y), 4, 255, -1)
+
+    cv2.imshow("temp", image)
+
+
+def edge_detection(image):
+    # edges = cv2.Laplacian(image, cv2.CV_64F)    #cv2.Canny(image, 100, 100)
+    edges = cv2.Canny(image, 100, 100)
+
+    cv2.imshow("Canny", edges)
+
+
+def brute_force(image1, image2):
+    orb = cv2.ORB_create()
+
+    kp1, des1 = orb.detectAndCompute(image1, None)
+    kp2, des2 = orb.detectAndCompute(image2, None)
+
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+    matches = bf.match(des1, des2)
+    matches = sorted(matches, key=lambda x: x.distance)
+
+    image3 = cv2.drawMatches(image1, kp1, image2, kp2, matches[:20], None, flags=2)
+    plt.imshow(image3)
+    plt.show()
+
+
 X_train = []
 Y_train = []
 X_test = []
 Y_test = []
-# sift = cv2.xfeatures2d.SIFT_create()
+sift = cv2.xfeatures2d.SIFT_create()
 des_list = []
 
 """Fill array"""
 
 
 def gen_sift_features(gray_img):
-    # kp, desc = sift.detectAndCompute(gray_img, None)
-    return
-    # return kp, desc
+    kp, desc = sift.detectAndCompute(gray_img, None)
+    return kp, desc
 
 
 def split_data_labels(current_folder_files, X_array, Y_array):
@@ -157,7 +197,7 @@ def plot_confusion_matrix(cm, classes,
                  horizontalalignment="center",
                  color="white" if cm[i, j] > thresh else "black")
 
-    # plt.tight_layout()
+    plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.show()
@@ -205,21 +245,16 @@ print('Fitting')
 im_features = pickle.load(open("train_X.p", "rb"))
 Y_train = pickle.load(open("train_Y.p", "rb"))
 
-# support = GaussianProcessClassifier()
+# clf = KNeighborsClassifier(n_neighbors=29)
+clf = mlp(hidden_layer_sizes=(1000,), max_iter=1000, learning_rate_init=0.00001, warm_start=True, early_stopping=True,
+            learning_rate='adaptive', )
 
-clf = ExtraTreesClassifier(n_estimators=130, criterion='entropy', n_jobs=-1, min_samples_split=5, warm_start=True)
 
 
-# clf = KNeighborsClassifier(n_neighbors=101)
-# clf = mlp(hidden_layer_sizes=(100, ),  max_iter=4000, learning_rate_init=0.0001, warm_start=True, early_stopping=True,
-#           learning_rate='adaptive',)
 clf.fit(im_features, np.array(Y_train))
 
-# for i in range(3):
+# for i in range(50):
 #     print(i)
-#     estimators += 100
-#     clf.fit(im_features, np.array(Y_train))
-
 print('fitted')
 
 """Transform test features into usable"""
@@ -253,18 +288,15 @@ Y_test = pickle.load(open("test_Y.p", "rb"))
 accuracy = clf.score(test_im_features, np.array(Y_test))
 predict = clf.predict(test_im_features)
 
-print('Progress')
-print(accuracy)
+print('Progress:',  accuracy*100, '%')
+
 
 matrix = confusion_matrix(Y_test, predict)
 # print(matrix)
-pickle.dump(matrix, open("matrix.p", "wb"))
 
-# matrixnp.set_printoptions(precision=2)
+np.set_printoptions(precision=2)
 plot_confusion_matrix(matrix, classes=sub_folders_list,
                       title='Confusion matrix, without normalization')
-
-
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
