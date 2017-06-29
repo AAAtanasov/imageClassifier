@@ -18,19 +18,35 @@ from sklearn import svm
 import itertools
 import pickle
 from sklearn.neural_network import MLPClassifier as mlp
+from scipy.cluster.vq import *
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import SGDClassifier
+from sklearn.ensemble import ExtraTreesClassifier
 
 """
 Array used to store all the images for 10-fold cross validation
 """
 ten_fold_array = [[] for i in repeat(None, 10)]
 sub_folders_list = []
+X_train = []
+Y_train = []
+X_test = []
+Y_test = []
+sift = cv2.xfeatures2d.SIFT_create()
+PRE_ALLOCATION_BUFFER = 1000
+des_list = []
+train_dictionary = {}
+test_dictionary = {}
+all_features_dict = {}
+
 
 
 def iterate_class_folders(number_of_classes):
     main_dir = "101_ObjectCategories"
     # sub_folders_list = []
     all_folder_names = os.listdir(main_dir)
-    temp_folders = ['Motorbikes', 'accordion', 'crocodile']
+    temp_folders = ['anchor', 'accordion', 'crocodile']
     # all_folder_names = temp_folders
     all_folder_names.remove(".DS_Store")
 
@@ -91,14 +107,136 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(101)
+iterate_class_folders(10)
 
-X_train = []
-Y_train = []
-X_test = []
-Y_test = []
-# sift = cv2.xfeatures2d.SIFT_create()
-des_list = []
+
+
+def generate_sift_features(picture_path):
+    image = cv2.imread(picture_path, cv2.COLOR_BGR2GRAY)
+    image = cv2.resize(image, (150, 150))
+    kp, desc = sift.detectAndCompute(image, None)
+    # nfeatures = initial_desc.shape[1]
+    # padding = np.zeros((2, nfeatures), dtype=numpy.float64)
+    # asd = np.vstack((kp, padding))
+    # temp = initial_desc.astype('float')
+    # descriptors = temp[:]
+    # pickle.dump([kp.T, descriptors.T], open("../pickles/sifts/start.p", "wb"))
+
+    return kp, desc
+
+
+def extract_sift_features_from_array(input_arr, feature_dictionary, y_array):
+    for picture in input_arr:
+        feature_label = picture.split('/')[1].split('\\')[0]
+        feature_name = feature_label + '.sift'
+        # add resize if needed
+        kp, descriptors = generate_sift_features(picture)
+        if feature_name not in feature_dictionary.keys():
+            feature_dictionary[feature_name] = []
+
+        feature_dictionary[feature_name].append(descriptors)
+        y_array.append(feature_label)
+        # else:
+        #     # feature_dictionary[feature_name] += descriptors
+        #     feature_dictionary[feature_name] = np.append(feature_dictionary[feature_name], [descriptors])
+
+
+# iterate dict keys, compute histograms for each key, store it in a code book
+
+def dict2numpy(dict):
+    nkeys = len(dict)
+    array = np.zeros((nkeys * PRE_ALLOCATION_BUFFER, 128))
+    pivot = 0
+    for key in dict.keys():
+        category_arr = dict[key]
+        for sub_value in category_arr:
+            value = sub_value
+            nelements = value.shape[0]
+            while pivot + nelements > array.shape[0]:
+                padding = np.zeros_like(array)
+                array = np.vstack((array, padding))
+            array[pivot:(pivot + nelements)] = value
+            pivot += nelements
+        array = np.resize(array, (pivot, 128))
+    return array
+
+def computeHistograms(codebook, descriptors):
+    code, dist = vq(descriptors, codebook)
+    histogram_of_words, bin_edges = np.histogram(code,
+                                              bins=range(codebook.shape[0] + 1),
+                                              normed=True)
+    return histogram_of_words
+
+
+for i in range(9):
+    print('Training at {0}'.format(i + 1))
+    extract_sift_features_from_array(ten_fold_array[i], train_dictionary, Y_train)
+
+extract_sift_features_from_array(ten_fold_array[9], test_dictionary, Y_test)
+print('Done with test feature extraction')
+
+all_features_array = dict2numpy(train_dictionary)
+nfeatures = all_features_array.shape[0]
+nclusters = int(np.sqrt(nfeatures))
+print('Extracting codebook')
+codebook, distortion = kmeans(all_features_array, nclusters, thresh=1)
+
+print('Extracted codebook')
+
+train_words_histograms = []
+test_words_histograms = []
+test = []
+
+def write_to_histogram(category, histogram):
+    for subarr in category:
+        word_histogram = computeHistograms(codebook, subarr)
+        histogram.append(word_histogram)
+
+
+for key in train_dictionary.keys():
+    write_to_histogram(train_dictionary[key], train_words_histograms)
+
+for key in test_dictionary.keys():
+    write_to_histogram(test_dictionary[key], test_words_histograms)
+
+
+def modify_histogram(nwords, histogram_array):
+    data_rows = np.zeros(nwords)  # add for label
+    index = -1
+    for histogram in histogram_array:
+        index +=1
+        if histogram.shape[0] != nwords:
+            nwords = histogram.shape[0]
+            data_rows = np.zeros(nwords)
+            print('nclusters reduced to {0}'.format(nwords))
+
+        # data_row = np.hstack((y[index], histogram))
+        data_rows = np.vstack((data_rows, histogram))
+
+    return data_rows
+
+print('Transforming data')
+new_x_train = modify_histogram(nclusters, np.asarray(train_words_histograms))
+
+new_x_test = modify_histogram(nclusters, np.asarray(test_words_histograms))
+
+# clf = SGDClassifier(penalty='l1', loss='squared_hinge', n_jobs=-1)
+# clf.fit(new_x_train[1:], np.asarray(Y_train))
+#
+# accuracy = clf.score(new_x_test[1:], np.array(Y_test))
+# print(accuracy)
+print('Teaching classifiers')
+
+clf_two = GaussianNB()
+clf_two.fit(new_x_train[1:], np.asarray(Y_train))
+second_score = clf_two.score(new_x_test[1:], np.array(Y_test))
+print(second_score)
+
+test = 1
+
+# x_train = dict2numpy()
+
+
 
 """Fill array"""
 
