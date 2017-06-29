@@ -114,7 +114,6 @@ print(sub_folders_list)
 
 def generate_sift_features(picture_path):
     image = cv2.imread(picture_path, cv2.COLOR_BGR2GRAY)
-    image = cv2.resize(image, (164, 164), cv2.INTER_LANCZOS4)
     kp, desc = sift.detectAndCompute(image, None)
     # nfeatures = initial_desc.shape[1]
     # padding = np.zeros((2, nfeatures), dtype=numpy.float64)
@@ -182,7 +181,7 @@ nfeatures = all_features_array.shape[0]
 nclusters = int(np.sqrt(nfeatures))
 n_test_clusters = int(np.sqrt(all_test_features_array.shape[0]))
 print('Extracting codebook')
-codebook, distortion = kmeans(all_features_array, nclusters, thresh=0.5)
+codebook, distortion = kmeans(all_features_array, nclusters, thresh=0.1)
 
 print('Extracted codebook')
 
@@ -220,9 +219,12 @@ def modify_histogram(nwords, histogram_array):
 
 print('Transforming data')
 new_x_train = modify_histogram(nclusters, np.asarray(train_words_histograms))
-# pickle.dump(new_x_train, open("pickles/temp_x.p", "wb"))
+pickle.dump(new_x_train, open("pickles/x_train.p", "wb"))
 new_x_test = modify_histogram(n_test_clusters, np.asarray(test_words_histograms))
-# pickle.dump(new_x_test, open("pickles/temp_test_x.p", "wb"))
+pickle.dump(new_x_test, open("pickles/x_test.p", "wb"))
+pickle.dump(Y_train, open("pickles/y_train.p", "wb"))
+pickle.dump(Y_test, open("pickles/y_test.p.p", "wb"))
+
 
 clf = SGDClassifier( n_jobs=-1)
 # clf.fit(new_x_train[1:], np.asarray(Y_train))
