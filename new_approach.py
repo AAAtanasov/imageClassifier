@@ -28,6 +28,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 Array used to store all the images for 10-fold cross validation
 """
 ten_fold_array = [[] for i in repeat(None, 10)]
+
 sub_folders_list = []
 X_train = []
 Y_train = []
@@ -107,13 +108,13 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(10)
-
+iterate_class_folders(15)
+print(sub_folders_list)
 
 
 def generate_sift_features(picture_path):
     image = cv2.imread(picture_path, cv2.COLOR_BGR2GRAY)
-    image = cv2.resize(image, (150, 150))
+    image = cv2.resize(image, (164, 164), cv2.INTER_LANCZOS4)
     kp, desc = sift.detectAndCompute(image, None)
     # nfeatures = initial_desc.shape[1]
     # padding = np.zeros((2, nfeatures), dtype=numpy.float64)
@@ -176,10 +177,12 @@ extract_sift_features_from_array(ten_fold_array[9], test_dictionary, Y_test)
 print('Done with test feature extraction')
 
 all_features_array = dict2numpy(train_dictionary)
+all_test_features_array = dict2numpy(test_dictionary)
 nfeatures = all_features_array.shape[0]
 nclusters = int(np.sqrt(nfeatures))
+n_test_clusters = int(np.sqrt(all_test_features_array.shape[0]))
 print('Extracting codebook')
-codebook, distortion = kmeans(all_features_array, nclusters, thresh=1)
+codebook, distortion = kmeans(all_features_array, nclusters, thresh=0.5)
 
 print('Extracted codebook')
 
@@ -217,19 +220,20 @@ def modify_histogram(nwords, histogram_array):
 
 print('Transforming data')
 new_x_train = modify_histogram(nclusters, np.asarray(train_words_histograms))
+# pickle.dump(new_x_train, open("pickles/temp_x.p", "wb"))
+new_x_test = modify_histogram(n_test_clusters, np.asarray(test_words_histograms))
+# pickle.dump(new_x_test, open("pickles/temp_test_x.p", "wb"))
 
-new_x_test = modify_histogram(nclusters, np.asarray(test_words_histograms))
-
-# clf = SGDClassifier(penalty='l1', loss='squared_hinge', n_jobs=-1)
+clf = SGDClassifier( n_jobs=-1)
 # clf.fit(new_x_train[1:], np.asarray(Y_train))
 #
 # accuracy = clf.score(new_x_test[1:], np.array(Y_test))
 # print(accuracy)
 print('Teaching classifiers')
 
-clf_two = GaussianNB()
-clf_two.fit(new_x_train[1:], np.asarray(Y_train))
-second_score = clf_two.score(new_x_test[1:], np.array(Y_test))
+#clf_two = GaussianNB()
+clf.fit(new_x_train[1:], np.asarray(Y_train))
+second_score = clf.score(new_x_test[1:], np.array(Y_test))
 print(second_score)
 
 test = 1
