@@ -108,7 +108,7 @@ def retrieve_image_from_folder(folder_name):
                             ten_fold_array, elementIndex)
 
 
-iterate_class_folders(15)
+iterate_class_folders(101)
 print(sub_folders_list)
 
 
@@ -178,13 +178,19 @@ for i in range(9):
 extract_sift_features_from_array(ten_fold_array[9], test_dictionary, Y_test)
 print('Done with test feature extraction')
 
+pickle.dump(Y_train, open("pickles/y_train.p", "wb"))
+pickle.dump(Y_test, open("pickles/y_test.p", "wb"))
+pickle.dump(train_dictionary, open("x_train_dict.p", "wb"))
+pickle.dump(test_dictionary, open("x_test_dict.p", "wb"))
+
+
 all_features_array = dict2numpy(train_dictionary)
 all_test_features_array = dict2numpy(test_dictionary)
 nfeatures = all_features_array.shape[0]
 nclusters = int(np.sqrt(nfeatures))
 n_test_clusters = int(np.sqrt(all_test_features_array.shape[0]))
 print('Extracting codebook')
-codebook, distortion = kmeans(all_features_array, nclusters, thresh=0.1)
+codebook, _ = kmeans(all_features_array, nclusters, thresh=0.2)
 
 print('Extracted codebook')
 
@@ -223,10 +229,9 @@ def modify_histogram(nwords, histogram_array):
 print('Transforming data')
 new_x_train = modify_histogram(nclusters, np.asarray(train_words_histograms))
 new_x_test = modify_histogram(n_test_clusters, np.asarray(test_words_histograms))
-pickle.dump([], open("pickles/x_train.p", "wb"))
-pickle.dump([], open("pickles/x_test.p", "wb"))
-pickle.dump([], open("pickles/y_train.p", "wb"))
-pickle.dump([], open("pickles/y_test.p.p", "wb"))
+pickle.dump(new_x_train, open("pickles/x_train.p", "wb"))
+pickle.dump(new_x_test, open("pickles/x_test.p", "wb"))
+
 
 
 clf = SGDClassifier( n_jobs=-1)
