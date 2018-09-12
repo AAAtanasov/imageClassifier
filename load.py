@@ -10,7 +10,9 @@ Array used to store all the images for 10-fold cross validation
 """
 ten_fold_array = [[] for i in repeat(None, 10)]
 
+print("it is:")
 print("Image Understanding Project")
+
 def iterate_class_folders(number_of_classes):
     main_dir = "101_ObjectCategories"
     sub_folders_list = []
